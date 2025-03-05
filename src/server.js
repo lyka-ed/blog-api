@@ -13,5 +13,5 @@ app.get("/", (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Server is running at http://localhost:${PORT}`);
+  console.log(`Blog-API at http://localhost:${PORT}`);
 });
