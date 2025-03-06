@@ -13,7 +13,7 @@ const UserValidationSchema = Joi.object({
       "string.pattern.base":
         "Password must have at least 8 characters, including an uppercase, a lowercase, a number, and a special character.",
     }),
-  authMethod: Joi.string().valid("local", "google").required(),,
+  authMethod: Joi.string().valid("local", "google").required(),
 });
 
 export default UserValidationSchema;
