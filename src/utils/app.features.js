@@ -1,3 +1,5 @@
+
+
 export const getReadingTime = (blogContent) => {
   if (!blogContent || typeof blogContent !== "string") {
     throw new Error("Invalid blog content");
