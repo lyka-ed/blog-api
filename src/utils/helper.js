@@ -30,4 +30,38 @@ export function verifyAccessToken(token) {
   });
 }
 
+// GENERATE REFRESH TOKEN
+export function generateRefreshToken(payload) {
+  if (!process.env.REFRESH_TOKEN_SECRET) {
+    throw new Error(
+      "REFRESH_TOKEN_SECRET is not configured in environment variables"
+    );
+  }
+  return jsonwebtoken.sign(payload, process.env.REFRESH_TOKEN_SECRET, {
+    expiresIn: process.env.REFRESH_TOKEN_LIFETIME,
+    algorithm: "HS256",
+  });
+}
+
+// VERIFY REFRESH TOKEN
+export function verifyRefreshToken(token) {
+  if (!process.env.REFRESH_TOKEN_SECRET) {
+    throw new Error(
+      "REFRESH_TOKEN_SECRET is not configured in environment variables"
+    );
+  }
+  return jsonwebtoken.verify(
+    token,
+    process.env.REFRESH_TOKEN_SECRET,
+    (err, decoded) => {
+      if (err) {
+        if (err.name === "TokenExpiredError") {
+          throw new Error("Refresh token expired, please login again");
+        }
+        throw new Error("Invalid refresh token");
+      }
+      return decoded;
+    }
+  );
+}
 
