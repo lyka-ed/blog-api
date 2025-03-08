@@ -2,6 +2,8 @@ import bcrypt from "bcryptjs";
 import asyncHandler from "express-async-handler";
 import User from "../Users/__def__/user.models.js";
 import Token from "./__def__/auth.model.js";
+import { generateTokens, generateAccessToken } from "../utils/helper.js";
+import JWT from "jsonwebtoken";
 
 // SIGN UP USER
 export const signUp = asyncHandler(async (req, res) => {
@@ -81,7 +83,6 @@ export const verifyEmail = asyncHandler(async (req, res) => {
 });
 
 // LOGIN USER
-// LOGIN
 export const login = asyncHandler(async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -115,9 +116,6 @@ export const login = asyncHandler(async (req, res) => {
     user.refreshToken = refreshToken;
     await user.save();
 
-    // const token = JWT.sign({ id: user._id }, process.env.JWT_SECRET, {
-    //   expiresIn: "1hr",
-    // });
     user.password = undefined;
 
     res.status(200).send({
@@ -135,3 +133,78 @@ export const login = asyncHandler(async (req, res) => {
     });
   }
 });
+
+// Refresh Access Token
+export const refreshAccessToken = asyncHandler(async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return res.status(400).send({
+        success: false,
+        message: "Refresh token is required",
+      });
+    }
+
+    //verify the refresh token
+    const decoded = verifyRefreshToken(refreshToken);
+
+    const user = await User.findById(decoded.id);
+
+    if (!user || user.refreshToken !== refreshToken) {
+      return res.status(403).send({
+        success: false,
+        message: "Invalid Refresh Token",
+      });
+    }
+
+    //Generate a new access token
+    const accessToken = generateAccessToken({ id: user._id });
+
+    res.status(200).send({
+      success: true,
+      message: "Access token refreshed successfully",
+      accessToken,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({
+      success: false,
+      message: "Error in refreshing access token",
+      error: error.message,
+    });
+  }
+});
+
+// LOGOUT
+export const logout = async (req, res) => {
+  try {
+    const token = req.headers.authorization.split(" ")[1];
+    const decoded = JWT.verify(token, process.env.JWT_SECRET);
+
+    const user = await User.findById(decoded.id);
+
+    // If the user is not found, return an error
+    if (!user) {
+      return res.status(404).send({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    user.refreshToken = null;
+    await user.save();
+
+    res.status(200).send({
+      success: true,
+      message: "Logged out successfully",
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({
+      success: false,
+      message: "Error in logout API",
+      error,
+    });
+  }
+};

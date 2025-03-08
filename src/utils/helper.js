@@ -1,4 +1,4 @@
-import jsonwebtoken from "jsonwebtoken";
+import JWT from "jsonwebtoken";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -8,7 +8,7 @@ export function generateAccessToken(payload) {
   if (!process.env.JWT_SECRET) {
     throw new Error("JWT_SECRET is not configured in .env file");
   }
-  return jsonwebtoken.sign(payload, process.env.JWT_SECRET, {
+  return JWT.sign(payload, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_LIFETIME,
     algorithm: "HS256",
   });
@@ -19,7 +19,7 @@ export function verifyAccessToken(token) {
   if (!process.env.JWT_SECRET) {
     throw new Error("JWT_SECRET is not configured in .env file");
   }
-  return jsonwebtoken.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+  return JWT.verify(token, process.env.JWT_SECRET, (err, decoded) => {
     if (err) {
       if (err.name === "TokenExpiredError") {
         throw new Error("Access token expired, please refresh your token");
@@ -37,7 +37,7 @@ export function generateRefreshToken(payload) {
       "REFRESH_TOKEN_SECRET is not configured in environment variables"
     );
   }
-  return jsonwebtoken.sign(payload, process.env.REFRESH_TOKEN_SECRET, {
+  return JWT.sign(payload, process.env.REFRESH_TOKEN_SECRET, {
     expiresIn: process.env.REFRESH_TOKEN_LIFETIME,
     algorithm: "HS256",
   });
@@ -50,18 +50,20 @@ export function verifyRefreshToken(token) {
       "REFRESH_TOKEN_SECRET is not configured in environment variables"
     );
   }
-  return jsonwebtoken.verify(
-    token,
-    process.env.REFRESH_TOKEN_SECRET,
-    (err, decoded) => {
-      if (err) {
-        if (err.name === "TokenExpiredError") {
-          throw new Error("Refresh token expired, please login again");
-        }
-        throw new Error("Invalid refresh token");
+  return JWT.verify(token, process.env.REFRESH_TOKEN_SECRET, (err, decoded) => {
+    if (err) {
+      if (err.name === "TokenExpiredError") {
+        throw new Error("Refresh token expired, please login again");
       }
-      return decoded;
+      throw new Error("Invalid refresh token");
     }
-  );
+    return decoded;
+  });
 }
 
+// Generate both access and refresh tokens
+export function generateTokens(payload) {
+  const accessToken = generateAccessToken(payload);
+  const refreshToken = generateRefreshToken(payload);
+  return { accessToken, refreshToken };
+}
