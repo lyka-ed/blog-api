@@ -13,3 +13,4 @@ const tokenSchema = new mongoose.Schema({
 });
 
 export default mongoose.model("Token", tokenSchema);
+
